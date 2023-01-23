@@ -2,119 +2,352 @@
 let googleSheet = SpreadsheetApp.getActiveSpreadsheet();
 
 // Sheets
-let inventory = googleSheet.getSheetByName("Inventory");
-let addDecreaseSheet = googleSheet.getSheetByName("Add Decrease Stock");
-let list = googleSheet.getSheetByName("List");
-let stockSheet = googleSheet.getSheetByName("Stock");
+let userFormSheet = googleSheet.getSheetByName("User Form");
+let deploymentRecordSheet = googleSheet.getSheetByName("Deployment Records");
 let supportDataSheet = googleSheet.getSheetByName("Support Data");
-let databaseSheet = googleSheet.getSheetByName("Database");
 let itemsSheet = googleSheet.getSheetByName("Items");
 
-let ui = SpreadsheetApp.getUi();
+let testSheet = googleSheet.getSheetByName("test");
+
+;
 let dateNow = new Date();
-let hours = dateNow.getHours();
-let minutes = dateNow.getMinutes();
+let hours = ("0" + dateNow.getHours()).slice(-2);
+let minutes = ("0" + dateNow.getMinutes()).slice(-2);
 let time = `${hours}:${minutes}`;
 
-Logger = BetterLog.useSpreadsheet('1RBAipO7DnPW948SRp7thANQMZ8qV_0XWbaynq9TtmO4'); // to log output
+Logger = BetterLog.useSpreadsheet('1OK2oUMaPSDtHPWQzRO0cPnsMAs9T6awLcMSuHGOawpk'); // to log output
 
 let actionString;
 let status;
-const item_id_set = 20;
-
-let date = inventory.getRange('C4');
-let actionColumn = inventory.getRange('C7');
-let item = inventory.getRange('C5');
-let qty = inventory.getRange('F5');
-let user = inventory.getRange('C6');
-let remarks = inventory.getRange('C9');
-let statusColumn = inventory.getRange('C8');
-
-const dateStock = addDecreaseSheet.getRange('C4');
-const itemStock = addDecreaseSheet.getRange('C5');
-const userStock = addDecreaseSheet.getRange('C6');
-const remarksStock = addDecreaseSheet.getRange('C9');
-const qtyStock = addDecreaseSheet.getRange('F5');
-
-function main() {
-  // Get the spreadsheet as an object we can manipulate
-  const ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Support Data");
-  // const ss = SpreadsheetApp.getActiveSpreadsheet();
 
 
-  /**
-   * Get the data into an array. The .getValues() method returns data in a 2D
-   * structure where each row is an array within the main array:
-   * 
-   * [ ["row1 col1", "row1 col2"], ["row2 col1", "row2 col2"]...]
-   */
-  const data = ss.getRange(1, 1, ss.getLastRow(), 2).getValues();
+const date = userFormSheet.getRange('C6');
+const item = userFormSheet.getRange('C8');
+const user = userFormSheet.getRange('C10');
+const deployment = userFormSheet.getRange('C12');
+const item_status = userFormSheet.getRange('C14');
+const remarks = userFormSheet.getRange('C16');
+const qty = userFormSheet.getRange('F9:F10');
 
-  // Open a loop so we can read each row individually
-  for(var i=0; i<data.length; i++) {
-    // Assign each row to a variable for readability
-    let row = data[i]
-    
-    // If there is no value in cell 1 of each row (the ID cell), then make an ID
-    if(!row[0]) {
-      let id = generateItemId()
+const testt = userFormSheet.getRange('L44');
 
-      // You need to use i+1 for the row range because arrays are zero-indexed,
-      // but Google Sheets' .setValue() expects row numbers starting with 1.
-      ss.getRange(i + 1, 1).setValue(id)
+
+const datetime = `${date.getValue()} ${time}`;
+
+const dateStock = userFormSheet.getRange('C29');
+const itemStock = userFormSheet.getRange('C31');
+const userStock = userFormSheet.getRange('C33');
+const actionStock = userFormSheet.getRange('C35');
+const remarksStock = userFormSheet.getRange('C37');
+const qtyStock = userFormSheet.getRange('F32:F33');
+
+// Label
+const item_id_label =  userFormSheet.getRange('C27');
+const item_name_label = userFormSheet.getRange('C31');
+const item_total_label = userFormSheet.getRange('F35:G37');
+
+const errorText = userFormSheet.getRange('E26');
+const remarksError = userFormSheet.getRange('C17');
+const itemStatusError = userFormSheet.getRange('C15');
+
+
+const searchField = userFormSheet.getRange('E27:F27');
+
+
+
+function test() {
+}
+
+
+function validate() {
+  if(date.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please enter the date');
+    errorBorder(date, "red");
+    return false;
+  }else if(item.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please enter the item');
+    errorBorder(item, "red");
+    return false;
+  }else if(user.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please select the user');
+    errorBorder(user, "red");
+    return false;
+  }else if(deployment.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please enter the Deployment');
+    errorBorder(deployment, "red");
+    return false;
+  }else if(item_status.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please select the item status');
+    errorBorder(item_status, "red");
+    return false;
+  }else if(remarks.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please enter the remarks');
+    errorBorder(remarks, "red");
+    return false;
+  }else if(qty.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please enter quantity');
+    errorBorder(qty, "red");
+    return false;
+  }
+
+  return true;
+
+}
+
+function validateItemStock() {
+  if(searchField.isBlank() === false){
+    if(item_id_label.getValue() === ""){
+      SpreadsheetApp.getUi().alert('Click the Search Button');
+      return false;
+    }else{
+      if(dateStock.isBlank() === true){
+        SpreadsheetApp.getUi().alert('Please enter the Date');
+        errorBorder(dateStock, "red");
+        return false;
+      }else if(userStock.isBlank() === true){
+        SpreadsheetApp.getUi().alert('Please select the user');
+        errorBorder(userStock, "red");
+        return false;
+      }else if(actionStock.isBlank() === true){
+        SpreadsheetApp.getUi().alert('Please select the action');
+        errorBorder(actionStock, "red");
+        return false;
+      }else if(remarksStock.isBlank() === true){
+        SpreadsheetApp.getUi().alert('Please enter the remarks');
+        errorBorder(remarksStock, "red");
+        return false;
+      }else if(qtyStock.isBlank() === true){
+        SpreadsheetApp.getUi().alert('Please enter the quantity');
+        errorBorder(qtyStock, "red");
+        return false;
+      }
     }
+  }else {
+    SpreadsheetApp.getUi().alert('Please enter Item ID or Item Name');
+    errorBorder(searchField);
+    return;
+  }
+
+  return true;
+}
+
+function errorBorder(rangeField, color) {
+  return rangeField.setBorder(true, true, true, true, true, true, color, SpreadsheetApp.BorderStyle.SOLID);
+
+}
+
+function deploySubmit() {
+  if(validate() === true){
+    deployClearBorder();
+
+    remarksError.setFontColor('transparent');
+    itemStatusError.setFontColor('transparent');
+
+      if(deployment.getValue().toUpperCase() === 'DEPLOY'){
+          deployItem(item.getValue(), qty.getValue());
+          return;
+      }else if(deployment.getValue().toUpperCase() === 'REPLACEMENT') {
+        replacementItem(item.getValue(), qty.getValue());
+        return;
+      }else if(deployment.getValue().toUpperCase() === 'DISPATCH'){
+        dispatchItem(item.getValue(), qty.getValue());
+        return;
+      }
+
+  }
+
+
+}
+
+function deployItem(itemName, qtyNo) {
+  const messageLog = `Deploy ${itemName} successfully`;
+  const items = getItems();
+  let totalQty;
+
+  const result = items.filter((item) => {
+    if(item.item_name.toLowerCase() == itemName.toLowerCase()){
+
+      if(item_status.getValue().toUpperCase() == 'DEFECTIVE'){
+        SpreadsheetApp.getUi().alert('Check the item status');
+        itemStatusError.setValue('Check the item status').setFontColor('red');
+        return;
+      }
+
+      if(item.quantity == 0) {
+        SpreadsheetApp.getUi().alert("No available this item "+ itemName);
+        return;
+      }else if(qtyNo > item.quantity){
+        SpreadsheetApp.getUi().alert("Error, Try again");
+        return;
+      }
+
+      totalQty = item.quantity - qtyNo;
+      item.quantity = totalQty;
+        
+      saveListData();
+      SpreadsheetApp.getUi().alert(messageLog);
+      Logger.log(messageLog);
+      clearFields();
+
+      // SpreadsheetApp.getUi().alert(`Deploy ${item.getValue()} successfully`);
+      return item
+    }
+  });
+
+  updateData(items);
+}
+
+
+function replacementItem(itemName, qtyNo) {
+  const messageDefectiveLog = `Replacement item ${itemName} status is ${item_status.getValue()} was not added to the stock`;
+  const messageWorkingLog = `Replacement item ${itemName} status is ${item_status.getValue()} was added to the stock`;
+
+  const items = getItems();
+  let totalQty;
+  const result = items.filter((item) => {
+    if(item.item_name.toLowerCase() == itemName.toLowerCase()){
+
+      if(item.quantity == 0) {
+        SpreadsheetApp.getUi().alert("No available this item "+ itemName);
+        return;
+      };
+
+      if(item_status.getValue().toUpperCase() == 'DEFECTIVE'){
+        totalQty = item.quantity;
+        item.quantity = totalQty;
+        SpreadsheetApp.getUi().alert(messageDefectiveLog);
+        Logger.log(messageDefectiveLog);
+      }else {
+        totalQty = item.quantity + qtyNo;
+        item.quantity = totalQty;
+        SpreadsheetApp.getUi().alert(messageWorkingLog);
+        Logger.log(messageWorkingLog);
+      }
+      saveListData();
+      SpreadsheetApp.getUi().alert(`Replacement ${itemName} successfully`);
+      clearFields();
+      return item;
+    }
+  });
+
+
+  updateData(items);
+}
+
+function dispatchItem(itemName, qtyNo) {
+  const message = `Dispatch item  ${itemName} decrease by ${qtyNo}`;
+  const items = getItems();
+  let totalQty;
+
+  const result = items.filter((item) => {
+    if(item.item_name.toLowerCase() == itemName.toLowerCase()) {
+
+
+
+     if(item.quantity == 0){
+       SpreadsheetApp.getUi().alert('No available this item');
+       return;
+     } 
+
+      if(item_status.getValue().toUpperCase() == 'DEFECTIVE'){
+        totalQty = item.quantity - qtyNo;
+        item.quantity = totalQty;
+        SpreadsheetApp.getUi().alert(message);
+        Logger.log(message);
+      }else {
+        SpreadsheetApp.getUi().alert('Item status must be Defective');
+        itemStatusError.setValue('Check the item status').setFontColor('red');
+        return;      
+      }
+
+      saveListData();
+      SpreadsheetApp.getUi().alert(`Dispatch ${itemName} successfully`);
+      clearFields();
+      return item;
+    }
+  });
+
+  updateData(items);
+}
+
+function stockSubmit() {
+  // const confirmation = ui.alert("Submit", "Do you want to submit the data?", ui.ButtonSet.YES_NO);
+
+  // if(confirmation == ui.Button.NO){
+  //   return;
+  // }
+
+  if(validateItemStock() === true){
+      stockClearBorder();
+      errorText.setFontColor('transparent');
+    
+
+    if(actionStock.getValue() === 'ADD'){
+      itemStockAdd(itemStock.getValue(), qtyStock.getValue());
+      return;
+    }else {
+      itemStockDecrease(itemStock.getValue(), qtyStock.getValue());
+      return;
+    }
+
   }
 }
 
-// When the script loads, add a menu item to the Spreadsheet so you can run the function
-function onOpen() {
-  SpreadsheetApp.getUi().createMenu("Make IDs").addItem("Run", "main").addToUi()
+
+
+
+function stockClearBorder() {
+  errorBorder(dateStock, "black");
+  errorBorder(searchField, "black");
+  errorBorder(userStock, "black");
+  errorBorder(actionStock, "black");
+  errorBorder(remarksStock, "black");
+  errorBorder(qtyStock, "black");
 }
 
-function randomFixedInteger(length) {
-  return Math.floor(
-    Math.pow(10, length - 1) +
-      Math.random() * (Math.pow(10, length) - Math.pow(10, length - 1) - 1)
-  );
-
+function deployClearBorder() {
+  errorBorder(date, "black");
+  errorBorder(user, "black");
+  errorBorder(item, "black");
+  errorBorder(deployment, "black");
+  errorBorder(item_status, "black");
+  errorBorder(remarks, "black");
+  errorBorder(qty, "black");
 }
-
-function generateItemId() {
-  let len = 2;
-  const item_id = Number(`${item_id_set}${randomFixedInteger(len)}`);
-  return item_id;
-}
-
-function showAction() {
-  if(actionColumn.getValue() == 'Deploy'){
-    inventory.hideRow(statusColumn);
-  }
-}
-
 
 function clearFields() {
+  deployClearBorder();
+
+  remarksError.setFontColor('transparent');
+  itemStatusError.setFontColor('transparent');
+ 
   date.clearContent();
-  actionColumn.clearContent();
-  item.clearContent();
-  qty.clearContent();
   user.clearContent();
+  item.clearContent();
+  deployment.clearContent();
+  item_status.clearContent();
   remarks.clearContent();
-  statusColumn.clearContent();
+  qty.clearContent();
 }
 
 function clearFieldsStock() {
+  stockClearBorder();
+
+  errorText.setFontColor('transparent');
+
   dateStock.clearContent();
   itemStock.clearContent();
   userStock.clearContent();
   remarksStock.clearContent();
   qtyStock.clearContent();
-  addDecreaseSheet.getRange('F7').clearContent();
-  addDecreaseSheet.getRange('C2').clearContent();
-  addDecreaseSheet.getRange('F2:G2').clearContent();
+  item_id_label.clearContent();
+  item_name_label.clearContent();
+  item_total_label.clearContent();
+  searchField.clearContent();
+  actionStock.clearContent();
 }
 
 function getItems() {
-  // A1:B24
   let data = itemsSheet.getDataRange().getValues();
   let arrayOfobj = convertToArrayOfObjects(data);
 
@@ -131,10 +364,6 @@ function updateData(data) {
     itemsSheet.getRange(i, 1).setValue(array[e][0])
     itemsSheet.getRange(i, 2).setValue(array[e][1]);
     itemsSheet.getRange(i, 3).setValue(array[e][2]);
-    
-    supportDataSheet.getRange(s,1).setValue(array[e][0]);
-    supportDataSheet.getRange(s,2).setValue(array[e][1]);
-    supportDataSheet.getRange(s,3).setValue(array[e][2]);
   }
 }
 
@@ -144,226 +373,65 @@ function convertToArrayOfObjects(data) {
         i = 0, k = 0,
         obj = null,
         output = [];
-
     for (i = 0; i < data.length; i++) {
         obj = {};
-
         for (k = 0; k < keys.length; k++) {
             obj[keys[k]] = data[i][k];
         }
-
         output.push(obj);
     }
-
     return output;
 }
 
-function deploySave(data, qty) {
-  const items = getItems();
-  let totalQty;
-  
-  const result = items.filter((item) => {
-    if(item.item_name == data){
-
-      if(item.quantity == 0) {
-        ui.alert("No available this item "+ item.items);
-        return;
-      };
-
-      totalQty = item.quantity - qty;
-      item.quantity = totalQty;
-
-      saveListData();
-      ui.alert("Deploy "+item.item_name+" to Employee "+user.getValue()+" sucessfully");
-
-      return item
-    }
-  });
-
-  
-  updateData(items);
-  
-}
-
-function validate() {
-  
-  if(actionColumn.isBlank() === true){
-    ui.alert('Please enter the action');
-    return false;
-  }else if(item.isBlank() === true){
-    ui.alert('Please enter the item');
-    return false;
-  }else if(qty.isBlank() === true){
-    ui.alert('Please enter the quantity');
-    return false;
-  }else if(user.isBlank() === true){
-    ui.alert('Please select the user');
-    return false;
-  }else if(remarks.isBlank() === true){
-    ui.alert('Please enter the remarks');
-    return false;
-  }
-  
-  return true;
-
-}
-
-function validateItemStock() {
-  if(itemStock.isBlank() === true){
-    ui.alert('Please enter the item');
-    return false;
-  }else if(remarksStock.isBlank() === true){
-    ui.alert('Please enter the remarks');
-    return false;
-  }else if(qtyStock.isBlank() === true){
-    ui.alert('Please enter the quantity');
-    return false;
-  }else if(userStock.isBlank() === true){
-    ui.alert('Please select the user');
-    return false;
-  }
-
-  return true;
-}
-
-function deployItem() {
-  const confirmation = ui.alert("Submit", 'Do you want to submit the data?', ui.ButtonSet.YES_NO);
-  actionString = "Deploy";
-  status = "Working";
-
-  if(confirmation == ui.Button.NO) {
-    return;
-  }
-
-  if(statusColumn.isBlank() === false){
-    ui.alert('Status works only when you undeploy item');
-    return;
-  }
-
-  if(validate() === true){
-    if(actionColumn.getValue() === actionString){
-      deploySave(item.getValue(), qty.getValue());
-    }else {
-      ui.alert('Select Deploy in Action');
-      return;
-    }
-
-    clearFields();
-  }
-  
-}
-
-function undeploySave(data, qty) {
-  const items = getItems();
-  let totalQty;
-  const result = items.filter((item) => {
-    if(item.items == data){
-      if(item.quantity == 0) {
-        ui.alert("No available this item "+ item.items);
-        return;
-      };
-
-      if(statusColumn.getValue() == 'Defective'){
-        totalQty = item.quantity;
-        item.quantity = totalQty;
-      }else {
-        totalQty = item.quantity + qty;
-        item.quantity = totalQty;
-      }
-
-      saveListData();
-      ui.alert("Undeploy "+item.items+" to Employee "+user.getValue()+" sucessfully");
-
-      return item;
-
-    }
-  });
-
-  updateData(items);
-}
-
-
-function undeployItem() {
-  const confirmation = ui.alert("Submit", 'Do you want to submit the data?', ui.ButtonSet.YES_NO);
-  actionString = "Undeploy";
-
-  if(confirmation == ui.Button.NO){
-    return;
-  }
-
-  if(validate() === true){
-    if(statusColumn.isBlank() === true){
-      ui.alert('Please enter Status of the item when Undeploy Item');
-      return;
-    }
-
-    if(actionColumn.getValue() === "Undeploy"){
-      undeploySave(item.getValue(), qty.getValue());
-    }else {
-      ui.alert('Select Undeploy in Action');
-      return;
-    }
-
-    clearFields();
-  }
-}
-
-
 function saveListData() {
-  let blankRow = list.getLastRow()+1;
+
+  let blankRow = deploymentRecordSheet.getLastRow()+1;
   const datetime = `${date.getValue()} ${time}`;
 
+  deploymentRecordSheet.getRange(blankRow, 1).setValue(datetime);
+  deploymentRecordSheet.getRange(blankRow, 2).setValue(item.getValue());
+  deploymentRecordSheet.getRange(blankRow,3).setValue(user.getValue());
+  deploymentRecordSheet.getRange(blankRow, 4).setValue(deployment.getValue());
+  deploymentRecordSheet.getRange(blankRow, 5).setValue(item_status.getValue());
+  deploymentRecordSheet.getRange(blankRow, 6).setValue(qty.getValue());
+  deploymentRecordSheet.getRange(blankRow,7).setValue(remarks.getValue());
 
-  list.getRange(blankRow, 1).setValue(datetime);
-  list.getRange(blankRow, 2).setValue(actionString);
-  statusColumn.isBlank() ? list.getRange(blankRow, 3).setValue('Working') : list.getRange(blankRow, 3).setValue(statusColumn.getValue());
-  list.getRange(blankRow, 4).setValue(item.getValue());
-  list.getRange(blankRow, 5).setValue(qty.getValue());
-  list.getRange(blankRow,6).setValue(user.getValue());
-  list.getRange(blankRow,7).setValue(remarks.getValue());
+
+  // statusColumn.isBlank() ? list.getRange(blankRow, 3).setValue('Working') : deploymentRecordSheet.getRange(blankRow, 3).setValue(statusColumn.getValue());
   
-  date.isBlank() && list.getRange(blankRow, 1).setValue(dateNow).setNumberFormat("yyyy-mm-dd");
+  // date.isBlank() && deploymentRecordSheet.getRange(blankRow, 1).setValue(datetime);
 
 }
 
-
-function addStock() {
-  const confirmation = ui.alert("Submit", 'Do you want to submit the data?', ui.ButtonSet.YES_NO);
-
-  if(confirmation === ui.Button.NO) return;
-
-  if(validateItemStock() === true){
-    itemStockAdd(itemStock.getValue(), qtyStock.getValue());
-  }
-
-  clearFieldsStock();
-}
 
 function decreaseStock() {
-  const confirmation = ui.alert("Submit", 'Do you want to submit the data?', ui.ButtonSet.YES_NO);
+  const confirmation = SpreadsheetApp.getUi().alert("Submit", 'Do you want to submit the data?', SpreadsheetApp.getUi().ButtonSet.YES_NO);
 
-  if(confirmation === ui.Button.NO) return;
+  if(searchField.isBlank() === true){
+    SpreadsheetApp.getUi().alert('Please enter Item name or Item ID');
+    return;
+  }
+  if(confirmation === SpreadsheetApp.getUi().Button.NO) return;
 
   if(validateItemStock() === true){
     itemStockDecrease(itemStock.getValue(), qtyStock.getValue());
   }
 
-  clearFieldsStock();
 }
 
-function itemStockAdd(data, stock) {
+function itemStockAdd(itemName, stock) {
   const items = getItems();
-  const status = "Add Stock";
+  const itemStatus = "Add Stock";
 
   const result = items.filter((item) => {
-    if(item.items == data){
+    if(item.item_name == itemName){
 
       totalQty = item.quantity + stock;
       item.quantity = totalQty;
-
-      saveStockData(status, totalQty);
-      ui.alert("Add stock "+itemStock.getValue() +" by "+stock+" ssucessfully");
-
+      
+      saveStockData(itemStatus, totalQty);
+      SpreadsheetApp.getUi().alert("Add stock "+itemName +" by "+stock+" successfully");
+      clearFieldsStock();
       return item
     }  
   });
@@ -372,18 +440,27 @@ function itemStockAdd(data, stock) {
   updateData(items);
 }
 
-function itemStockDecrease(data, stock) {
+function itemStockDecrease(itemName, stock) {
   const items = getItems();
-  const status = "Decrease Stock";
+  const itemStatus = "Decrease Stock";
 
   const result = items.filter((item) => {
-    if(item.items == data){
+    if(item.item_name == itemName){
 
       totalQty = item.quantity - stock;
+
+      // for negative
+      if(totalQty < 0){
+        SpreadsheetApp.getUi().alert("Error. Please try again");
+        return;
+      }
+      Logger.log(totalQty);
+
       item.quantity = totalQty;
 
-      saveStockData(status, totalQty);
-      ui.alert("Decrease stock "+itemStock.getValue() +" by "+stock+" ssucessfully");
+      saveStockData(itemStatus, totalQty);
+      SpreadsheetApp.getUi().alert("Decrease stock "+itemStock.getValue() +" by "+stock+" successfully");
+      clearFieldsStock();
 
       return item
     }  
@@ -393,60 +470,64 @@ function itemStockDecrease(data, stock) {
   updateData(items);
 }
 
-function saveStockData(status, totalStock) {
-  let blankRow = stockSheet.getLastRow()+1;
+function saveStockData(itemStatus, totalStock) {
+  let blankRow = deploymentRecordSheet.getLastRow()+1;
   const datetime = `${dateStock.getValue()} ${time}`;
+  const remarksString = `${remarksStock.getValue()}   Total: ${totalStock}`;
 
+  deploymentRecordSheet.getRange(blankRow, 1).setValue(datetime);
+  deploymentRecordSheet.getRange(blankRow, 2).setValue(itemStock.getValue());
+  deploymentRecordSheet.getRange(blankRow, 3).setValue(userStock.getValue());
+  deploymentRecordSheet.getRange(blankRow, 4).setValue(actionStock.getValue());
+  deploymentRecordSheet.getRange(blankRow,5).setValue(itemStatus);
+  deploymentRecordSheet.getRange(blankRow, 6).setValue(qtyStock.getValue());
+  deploymentRecordSheet.getRange(blankRow, 7).setValue(remarksString);
 
-  stockSheet.getRange(blankRow, 1).setValue(datetime);
-  stockSheet.getRange(blankRow, 2).setValue(itemStock.getValue());
-  stockSheet.getRange(blankRow, 3).setValue(qtyStock.getValue());
-  stockSheet.getRange(blankRow, 4).setValue(userStock.getValue());
-  stockSheet.getRange(blankRow,5).setValue(remarksStock.getValue());
-  stockSheet.getRange(blankRow,6).setValue(totalStock);
-  stockSheet.getRange(blankRow,7).setValue(status);
-
-  
-  dateStock.isBlank() && list.getRange(blankRow, 1).setValue(dateNow).setNumberFormat("yyyy-mm-dd");
+  dateStock.isBlank() && deploymentRecordSheet.getRange(blankRow, 1).setValue(`${dateNow} ${time}`).setNumberFormat("yyyy-mm-dd");
 
 }
 
 function searchItemId() {
-   const totalQtyLabel = addDecreaseSheet.getRange('F7');
-   const itemLabel = addDecreaseSheet.getRange('C5');
-   const itemIdLabel = addDecreaseSheet.getRange('C2');
-
-   let str = addDecreaseSheet.getRange('F2:G2').getValue();  
-   let values = databaseSheet.getDataRange().getValues();
+   let str = searchField.getValue().toString();  
+   let values = itemsSheet.getDataRange().getValues();
 
    let valuesFound = false;
-    Logger.log(values);
-   return;
+
    for(let i=0; i<values.length; i++){
      let rowValue = values[i];
+     const item_id_column = rowValue[0];
+     const item_name_column = rowValue[1];
 
-     if(rowValue[0] == str){
-       totalQtyLabel.setValue(rowValue[2]);
-       itemLabel.setValue(rowValue[1]);
-       itemIdLabel.setValue(rowValue[0]);
+     if(item_id_column.toString().toLowerCase() == str.toLowerCase()){
+       errorText.setFontColor('transparent');
+       errorBorder(searchField, "black");
+
+       item_total_label.setValue(rowValue[2]);
+       item_name_label.setValue(rowValue[1]);
+       item_id_label.setValue(rowValue[0]);
        return;
-     }else if(rowValue[1] == str){
-       totalQtyLabel.setValue(rowValue[2]);
-       itemLabel.setValue(rowValue[1]);
-       itemIdLabel.setValue(rowValue[0]);
+     }else if(item_name_column.toString().toLowerCase() == str.toLowerCase()){
+       errorText.setFontColor('transparent');
+      errorBorder(searchField, "black");
+
+       item_total_label.setValue(rowValue[2]);
+       item_name_label.setValue(rowValue[1]);
+       item_id_label.setValue(rowValue[0]);
        return;
      }
      
    }
 
    if(valuesFound == false){
-     totalQtyLabel.clearContent();
-     itemLabel.clearContent();
-     itemIdLabel.clearContent();
-     ui.alert('No item found');
+    
+     errorText.setValue(`Item not found`).setFontColor('red');
+     errorBorder(searchField, "red");
+
+     item_total_label.clearContent();
+     item_name_label.clearContent();
+     item_id_label.clearContent();
+     SpreadsheetApp.getUi().alert('No item found');
    }
-
-
 }
 
 function makeIDButton() {
@@ -460,107 +541,13 @@ function makeIDButton() {
     let rowValue = values[i];
 
     if(rowValue[0] == item_id_label.getValue()){
-      ui.alert('Item ID already exists. Generate ID again');
+      SpreadsheetApp.getUi().alert('Item ID already exists. Generate ID again');
       return;
     }
   }
-
-
 }
 
 function onlyNumber(str){
   const reg = /^\d+$/;
   return reg.test(str);
 }
-
-function createItem() {
-  const item_id_label = supportDataSheet.getRange('G4');
-  const item_name = supportDataSheet.getRange('G5');
-  const item_quantity = supportDataSheet.getRange('G6');
-
-  const confirmation = ui.alert("Submit", 'Do you want to submit the data?', ui.ButtonSet.YES_NO);
-
-  if(confirmation === ui.Button.NO) return;
-
-  if(item_id_label.isBlank() == true){
-    ui.alert('Please generate item id');
-    return;
-  }else if(item_name.isBlank() == true){
-    ui.alert('Please enter item name.');
-    return;
-  }else if(item_quantity.isBlank() == true){
-    ui.alert('Please enter quantity');
-    return
-  }else if(onlyNumber(item_quantity.getValue()) == false){
-    ui.alert('Please enter number only');
-    return
-  }
-
-  saveCreateItemInDatabase(item_id_label.getValue(), item_name.getValue(), item_quantity.getValue());
-  ui.alert('Successfully create item '+ item_name.getValue());
-
-}
-
-function clearCreateItemField() {
-  const item_id_label = supportDataSheet.getRange('G4');
-  const item_name = supportDataSheet.getRange('G5');
-  const item_quantity = supportDataSheet.getRange('G6');
-
-  item_id_label.clearContent();
-  item_name.clearContent();
-  item_quantity.clearContent();
-}
-
-function saveCreateItemInDatabase(itemID, itemName, itemQty) {
-  let blankRow = itemsSheet.getLastRow()+1;
-  let inventoryRow = inventory.getLastRow()+1;
-
-  itemsSheet.getRange(blankRow, 1).setValue(itemID);
-  itemsSheet.getRange(blankRow, 2).setValue(itemName);
-  itemsSheet.getRange(blankRow, 3).setValue(itemQty);
-
-  inventory.getRange(inventoryRow, 2).setValue(itemID).setBackground('red').setFontColor('white');
-  inventory.getRange(inventoryRow, 3).setValue(itemName).setBackground('red').setFontColor('white');
-  inventory.getRange(inventoryRow, 4).setValue(itemQty).setBackground('red').setFontColor('white');
-  inventory.getRange(inventoryRow, 5).setValue("New").setFontColor('blue');
-
-  const items = getItems();
-
-
-  const arr = items.map((obj) => {
-    return [obj.item_id, obj.item_name, obj.quantity];
-  });
-
-  let len = arr.length + 2;
-
-  for(let s = 2, e = 0; s<len, e<len; e++, s++) {
-    
-    supportDataSheet.getRange(s,1).setValue(arr[e][0]);
-    supportDataSheet.getRange(s,2).setValue(arr[e][1]);
-    supportDataSheet.getRange(s,3).setValue(arr[e][2]);
-
-
-  }
-
-}
-
-function findLastRow() {
-  let blankRow = inventory.getLastRow();
-  Logger.log(blankRow);
-}
-
-function test() {
-  const items = getAllItem();
-  const arr = items.map((obj) => {
-    return [obj.item_id, obj.items_name, obj.quantity];
-  });
-
-  let bc = arr.length + 2;
-  Logger.log(`length: ${arr.length} --- bc: ${bc}`);
-  for(let s = 2, e=0; e<bc, s<bc; e++, s++)   {  
-    Logger.log(`${s}, 1  - ${arr[e][0]}`);
-  }
-
-}
-
-
